@@ -8,10 +8,12 @@ Extracts structured data from uploaded resume files:
 
 import io
 import re
+import os
 from typing import Any
 
 import pdfplumber
 import spacy
+import requests
 from docx import Document as DocxDocument
 
 # ────────────────────────────────────────────────────────
@@ -82,6 +84,13 @@ class ResumeParser:
         Entry point. Accepts raw bytes + filename.
         Returns the full structured dict.
         """
+        # 1. Try external parser if API key exists
+        if os.getenv("USERESUME_API_KEY"):
+            external_result = self.parse_external(file_bytes, filename)
+            if "error" not in external_result:
+                return external_result
+
+        # 2. Fallback to basic internal parser
         ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
         if ext == "pdf":
             raw_text = self._extract_pdf(file_bytes)
@@ -91,6 +100,76 @@ class ResumeParser:
             raise ValueError(f"Unsupported file type: .{ext}")
 
         return self._parse_text(raw_text)
+
+    def parse_external(self, file_bytes: bytes, filename: str) -> dict[str, Any]:
+        """
+        Calls UseResume AI API to parse the resume.
+        Note: Requires USERESUME_API_KEY in environment.
+        """
+        api_key = os.getenv("USERESUME_API_KEY")
+        if not api_key:
+            return {"error": "USERESUME_API_KEY not configured"}
+
+        # UseResume AI v3 endpoint
+        url = "https://useresume.ai/api/v3/resume/parse" 
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        try:
+            import base64
+            encoded_file = base64.b64encode(file_bytes).decode('utf-8')
+            
+            payload = {
+                "file": encoded_file,
+                "parse_to": "json"
+            }
+            
+            # UseResume API typically returns results in ~5-15s
+            response = requests.post(url, headers=headers, json=payload, timeout=25)
+            response.raise_for_status()
+            
+            data = response.json()
+            # UseResume v3 usually returns { "success": true, "data": { ... } }
+            if data.get("success") and "data" in data:
+                data = data["data"]
+            elif "data" in data: # Some versions/states might only have data
+                data = data["data"]
+                
+            return self._map_useresume_to_internal(data)
+        except Exception as e:
+            return {"error": f"UseResume AI Parsing Error: {str(e)}"}
+
+    def _map_useresume_to_internal(self, data: dict) -> dict[str, Any]:
+        """
+        Maps UseResume AI's output to our internal schema.
+        """
+        # Mapping social links from 'links' array
+        linkedin = ""
+        github = ""
+        links = data.get("links") or []
+        for link in links:
+            name = str(link.get("name", "")).lower()
+            url = link.get("url", "")
+            if "linkedin" in name: linkedin = url
+            elif "github" in name: github = url
+
+        return {
+            "name": data.get("name") or "",
+            "email": data.get("email") or "",
+            "phone": data.get("phone") or "",
+            "linkedin": linkedin,
+            "github": github,
+            "summary": data.get("summary") or "",
+            "education": data.get("education") or [],
+            "experience": data.get("employment") or [], # UseResume uses 'employment'
+            "skills": data.get("skills") or [],
+            "projects": data.get("projects") or [],
+            "certifications": data.get("certifications") or [],
+            "achievements": data.get("achievements") or [],
+            "meta": {"parser": "useresume_ai"}
+        }
 
     # ── Text extraction ──────────────────────────────────
 

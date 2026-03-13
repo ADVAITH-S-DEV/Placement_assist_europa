@@ -106,3 +106,24 @@ async def score_from_json(request: dict):
         return {"success": True, "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to score JSON: {str(e)}")
+@app.post("/analyze-from-json")
+async def analyze_from_json(request: dict):
+    """
+    Analyze a direct resume JSON with high-fidelity feedback.
+    Expects: {"resume_json": {...}, "job_description": "..."}
+    """
+    resume_json = request.get("resume_json")
+    job_description = request.get("job_description", "")
+    
+    if not resume_json:
+        raise HTTPException(status_code=400, detail="Missing resume_json")
+    
+    # Auto-unwrap 'data' envelope
+    if isinstance(resume_json, dict) and "data" in resume_json and "success" in resume_json:
+        resume_json = resume_json["data"]
+        
+    try:
+        result = analyzer.analyze_json(resume_json, job_description)
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to analyze JSON: {str(e)}")

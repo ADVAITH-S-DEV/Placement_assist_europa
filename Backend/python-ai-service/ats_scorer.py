@@ -260,8 +260,15 @@ class ATSScorer:
 
         return review
 
-    def _normalize_tech(self, text: str) -> str:
-        """Normalize tech terms based on synonyms."""
+    def _normalize_tech(self, text: Any) -> str:
+        """Normalize tech terms based on synonyms. Handles strings or dicts."""
+        if isinstance(text, dict):
+            # Try common keys in nested skill objects
+            text = text.get("name") or text.get("skill") or str(text)
+        
+        if not isinstance(text, str):
+            text = str(text)
+            
         text = text.lower().strip()
         text = re.sub(r'\s*\d+(\.\d+)*\+?$', '', text)
         for canonical, aliases in TECH_SYNONYMS.items():
@@ -299,17 +306,31 @@ class ATSScorer:
 
     def _calculate_keyword_density(self, resume_json: dict, jd: str) -> float:
         """TF-IDF Similarity score with recency weighting."""
-        parts = [resume_json.get("summary", "") * 2]
+        def get_text(val):
+            if isinstance(val, list): return " ".join([get_text(v) for v in val])
+            if isinstance(val, dict): return val.get("text") or val.get("name") or val.get("description") or str(val)
+            return str(val)
+
+        parts = [get_text(resume_json.get("summary", "")) * 2]
         exps = resume_json.get("experience", [])
         for i, exp in enumerate(exps):
             weight = 3 if i == 0 else 1
-            content = f"{exp.get('role')} {exp.get('company')} " + " ".join(exp.get("responsibilities", []))
-            parts.append(content * weight)
+            role = exp.get('role') or exp.get('title') or ""
+            company = exp.get('company') or ""
+            resp = get_text(exp.get("responsibilities", []))
+            parts.append(f"{role} {company} {resp}" * weight)
+            
         for proj in resume_json.get("projects", []):
-            parts.append(proj.get("title", "") + " " + " ".join(proj.get("technologies", [])))
-        if isinstance(resume_json.get("skills"), dict):
-            for cat in resume_json["skills"].values(): parts.extend(cat)
-        else: parts.extend(resume_json.get("skills", []))
+            title = proj.get("name") or proj.get("title") or ""
+            desc = proj.get("description") or proj.get("short_description") or ""
+            tech = get_text(proj.get("technologies", []))
+            parts.append(f"{title} {desc} {tech}")
+            
+        skills = resume_json.get("skills", [])
+        if isinstance(skills, dict):
+            for cat in skills.values(): parts.extend([get_text(s) for s in cat])
+        else:
+            parts.extend([get_text(s) for s in skills])
         
         try:
             vectorizer = TfidfVectorizer(stop_words='english')
@@ -317,9 +338,14 @@ class ATSScorer:
             sim = cosine_similarity(tfidf[0:1], tfidf[1:2])[0][0]
             return min(sim * 55, 15)
         except: return 0
-
+    
     def _calculate_quantified_achievements(self, resume_json: dict) -> dict[str, Any]:
         """Detect metrics and identify which roles lack them."""
+        def extract(val):
+            if isinstance(val, list): return " ".join([extract(v) for v in val])
+            if isinstance(val, dict): return val.get("text") or val.get("name") or val.get("description") or str(val)
+            return str(val)
+
         text = self._flatten_resume(resume_json)
         text_no_phones = re.sub(r'\+?\d{7,}', '', text)
         patterns = [
@@ -331,7 +357,9 @@ class ATSScorer:
         missing_in_roles = []
         for p in patterns: total_count += len(re.findall(p, text_no_phones, re.I))
         for exp in resume_json.get("experience", []):
-            exp_text = f"{exp.get('role')} " + " ".join(exp.get("responsibilities", []))
+            role = exp.get('role') or exp.get('title') or ""
+            resp = extract(exp.get("responsibilities", []))
+            exp_text = f"{extract(role)} {resp}"
             if not any(re.search(p, exp_text, re.I) for p in patterns): missing_in_roles.append(exp)
         return {"score": min(total_count * 3, 15), "total_count": total_count, "missing_in_roles": missing_in_roles}
 
@@ -368,7 +396,14 @@ class ATSScorer:
         common_roles = {"developer", "engineer", "manager", "architect", "lead", "designer", "consultant", "analyst", "intern", "staff", "senior", "junior"}
         target_role_terms = {w.lower() for w in jd_title_words if w.lower() in common_roles}
         if not target_role_terms: return 5, "Role title not clearly identified in JD."
-        exp_roles = [e.get("role", "").lower() for e in resume_json.get("experience", [])]
+        
+        exps = resume_json.get("experience", [])
+        exp_roles = []
+        for e in exps:
+            role_val = e.get("role") or e.get("title") or ""
+            if isinstance(role_val, dict): role_val = role_val.get("name") or str(role_val)
+            exp_roles.append(str(role_val).lower())
+            
         match = any(any(tr in er for tr in target_role_terms) for er in exp_roles)
         if match: return 10, "Your professional titles align well with the target role."
         else: return 2, f"Target role is '{'/'.join(target_role_terms)}', but your titles focus elsewhere."
@@ -392,17 +427,33 @@ class ATSScorer:
         return 0, "No matching degree level found."
 
     def _flatten_resume(self, resume_json: dict) -> str:
-        """Convert JSON to flat text."""
-        parts = [resume_json.get("name", ""), resume_json.get("summary", "")]
-        for edu in resume_json.get("education", []): parts.append(f"{edu.get('degree')} {edu.get('institution')}")
+        """Convert JSON to flat text, resilient to nested objects."""
+        def extract(val):
+            if isinstance(val, list): return " ".join([extract(v) for v in val])
+            if isinstance(val, dict): return val.get("text") or val.get("name") or val.get("description") or str(val)
+            return str(val)
+
+        parts = [extract(resume_json.get("name", "")), extract(resume_json.get("summary", ""))]
+        for edu in resume_json.get("education", []): 
+            deg = edu.get('degree') or ""
+            inst = edu.get('institution') or ""
+            parts.append(f"{extract(deg)} {extract(inst)}")
+            
         for exp in resume_json.get("experience", []):
-            parts.append(f"{exp.get('role')} {exp.get('company')}")
-            parts.extend(exp.get("responsibilities", []))
+            role = exp.get('role') or exp.get('title') or ""
+            comp = exp.get('company') or ""
+            parts.append(f"{extract(role)} {extract(comp)}")
+            parts.append(extract(exp.get("responsibilities", [])))
+            
         for proj in resume_json.get("projects", []):
-            parts.append(proj.get("title", ""))
-            parts.extend(proj.get("technologies", []))
-            parts.extend(proj.get("description", []))
-        if isinstance(resume_json.get("skills"), dict):
-            for cat in resume_json["skills"].values(): parts.extend(cat)
-        else: parts.extend(resume_json.get("skills", []))
-        return " ".join([str(p) for p in parts if p])
+            title = proj.get("name") or proj.get("title") or ""
+            desc = proj.get("description") or proj.get("short_description") or ""
+            parts.append(f"{extract(title)} {extract(desc)}")
+            
+        skills = resume_json.get("skills", [])
+        if isinstance(skills, dict):
+            for cat in skills.values(): parts.append(extract(cat))
+        else:
+            parts.append(extract(skills))
+            
+        return " ".join([p for p in parts if p])
