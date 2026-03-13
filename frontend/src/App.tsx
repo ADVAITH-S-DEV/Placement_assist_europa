@@ -4,6 +4,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import Login from './pages/Login'; // force IDE TS server refresh
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
+import AdminCalendar from './pages/AdminCalendar';
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -33,6 +34,11 @@ function App() {
           <Route path="/admin/dashboard" element={
             <ProtectedRoute allowedRole="admin">
               <AdminDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/calendar" element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminCalendar />
             </ProtectedRoute>
           } />
         </Routes>

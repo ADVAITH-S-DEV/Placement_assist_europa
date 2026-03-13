@@ -24,6 +24,11 @@ class DummyStudentRecord(Base):
     age = Column(Integer)
     dob = Column(String) # For simplicity
     marks = Column(String) # Could be JSON in Postgres, keeping string to support SQLite simply
+    # New academic fields
+    branch = Column(String)  # IT, CS, EEE, EC, MECH, CIVIL
+    graduation_year = Column(Integer)
+    active_backlogs = Column(Boolean, default=False)
+    placed = Column(Boolean, default=False)
 class Job(Base):
     __tablename__ = "jobs"
     id = Column(Integer, primary_key=True, index=True)
@@ -39,6 +44,7 @@ class InterviewRound(Base):
     __tablename__ = "interview_rounds"
     id = Column(Integer, primary_key=True, index=True)
     job_id = Column(Integer, ForeignKey("jobs.id"))
+    student_id = Column(Integer, ForeignKey("dummy_student_records.id"))
     round_name = Column(String)
     start_time = Column(DateTime)
     end_time = Column(DateTime)

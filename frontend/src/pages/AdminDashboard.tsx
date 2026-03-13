@@ -6,8 +6,9 @@ import api from '../services/api';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const [students, setStudents] = useState<any[]>([]);
+  const [applicants, setApplicants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewAll, setViewAll] = useState(false); // false = eligible only, true = all applicants
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
   const [newJob, setNewJob] = useState({
     company_name: '',
@@ -19,10 +20,14 @@ const AdminDashboard = () => {
   });
 
   useEffect(() => {
-    const fetchStudents = async () => {
+    const fetchApplicants = async () => {
+      setLoading(true);
       try {
-        const res = await api.get('/users/students');
-        setStudents(res.data);
+        const endpoint = viewAll
+          ? '/placements/applicants'
+          : '/placements/eligible-applicants';
+        const res = await api.get(endpoint);
+        setApplicants(res.data);
       } catch (err) {
         localStorage.removeItem('token');
         navigate('/login');
@@ -30,8 +35,8 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     };
-    fetchStudents();
-  }, [navigate]);
+    fetchApplicants();
+  }, [navigate, viewAll]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -98,40 +103,95 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        {/* STUDENT TABLE SECTION */}
+        {/* APPLICANTS TABLE SECTION */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Registered Students</h2>
-          <div style={{ position: 'relative' }}>
-            <Search className="w-4 h-4 text-muted" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
-            <input 
-              type="text" 
-              placeholder="Search by name or reg no..." 
-              className="form-input" 
-              style={{ paddingLeft: '2.5rem', width: '300px' }}
-            />
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>
+            {viewAll ? 'All Applicants' : 'Eligible Applicants'}
+          </h2>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <div style={{ position: 'relative' }}>
+              <Search className="w-4 h-4 text-muted" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+              <input 
+                type="text" 
+                placeholder="Search by name or reg no..." 
+                className="form-input" 
+                style={{ paddingLeft: '2.5rem', width: '260px' }}
+              />
+            </div>
+            <button
+              className="btn btn-outline"
+              style={{ width: 'auto' }}
+              onClick={() => setViewAll(!viewAll)}
+            >
+              {viewAll ? 'View Eligible Only' : 'View All Applicants'}
+            </button>
           </div>
         </div>
 
         <div style={{ background: 'var(--surface-color)', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-sm)', overflow: 'hidden' }}>
           {loading ? (
             <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Loading records...</div>
-          ) : students.length === 0 ? (
-            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>No students have registered yet.</div>
+          ) : applicants.length === 0 ? (
+            <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+              {viewAll ? 'No applicants found.' : 'No eligible applicants found.'}
+            </div>
           ) : (
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: 'var(--bg-color)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
-                  <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Reg Number</th>
+                  <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Reg. No</th>
                   <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Name</th>
-                  <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Email</th>
+                  <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Branch</th>
+                  <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Grad. Year</th>
+                  <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Placed?</th>
+                  {!viewAll && (
+                    <>
+                      <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Opportunity</th>
+                      <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Interview Status</th>
+                      <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Actions</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
-                {students.map((student) => (
-                  <tr key={student.reg_number} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                    <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{student.reg_number}</td>
-                    <td style={{ padding: '1rem 1.5rem' }}>{student.name}</td>
-                    <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)' }}>{student.email}</td>
+                {applicants.map((app) => (
+                  <tr key={app.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                    <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{app.reg_number}</td>
+                    <td style={{ padding: '1rem 1.5rem' }}>{app.name}</td>
+                    <td style={{ padding: '1rem 1.5rem' }}>{app.branch || '—'}</td>
+                    <td style={{ padding: '1rem 1.5rem' }}>{app.graduation_year || '—'}</td>
+                    <td style={{ padding: '1rem 1.5rem' }}>{app.placed ? 'Placed' : 'Not placed'}</td>
+                    {!viewAll && (
+                      <>
+                        <td style={{ padding: '1rem 1.5rem' }}>
+                          {app.job_role} at {app.company_name}
+                        </td>
+                        <td style={{ padding: '1rem 1.5rem' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <span>
+                              {app.is_completed
+                                ? 'Completed'
+                                : app.is_scheduled
+                                ? 'Scheduled'
+                                : 'Not scheduled'}
+                            </span>
+                            {app.interview_start && (
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                {new Date(app.interview_start).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td style={{ padding: '1rem 1.5rem' }}>
+                          <button
+                            className="btn btn-outline"
+                            onClick={() => navigate(`/admin/calendar?studentId=${app.id}&jobId=${app.job_id}`)}
+                          >
+                            Schedule Interview
+                          </button>
+                        </td>
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
