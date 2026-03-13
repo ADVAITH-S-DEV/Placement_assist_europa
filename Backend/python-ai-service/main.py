@@ -4,7 +4,7 @@ FastAPI app exposing AI-powered resume analysis, ATS scoring,
 and resume parsing endpoints.
 """
 
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Form
 from fastapi.middleware.cors import CORSMiddleware
 
 from resume_analyzer import ResumeAnalyzer
@@ -69,11 +69,40 @@ async def analyze_resume(file: UploadFile = File(...)):
 
 
 @app.post("/ats-score")
-async def ats_score(file: UploadFile = File(...), job_description: str = ""):
-    """Score a resume against a job description for ATS compatibility."""
+async def ats_score(file: UploadFile = File(...), job_description: str = Form("")):
+    """Score a resume file against a job description."""
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
-    contents = await file.read()
-    result = scorer.score(contents, file.filename, job_description)
-    return {"success": True, "data": result}
+    try:
+        contents = await file.read()
+        # 1. Parse the resume to get structured JSON
+        parsed_data = parser.parse(contents, file.filename)
+        # 2. Score the parsed JSON against the JD
+        result = scorer.score(parsed_data, job_description)
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to score resume: {str(e)}")
+
+
+@app.post("/score-from-json")
+async def score_from_json(request: dict):
+    """
+    Score a direct resume JSON against a job description.
+    Expects: {"resume_json": {...}, "job_description": "..."}
+    """
+    resume_json = request.get("resume_json")
+    job_description = request.get("job_description", "")
+    
+    if not resume_json:
+        raise HTTPException(status_code=400, detail="Missing resume_json")
+    
+    # Auto-unwrap 'data' envelope if it exists (common if user passes parser output directly)
+    if isinstance(resume_json, dict) and "data" in resume_json and "success" in resume_json:
+        resume_json = resume_json["data"]
+        
+    try:
+        result = scorer.score(resume_json, job_description)
+        return {"success": True, "data": result}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to score JSON: {str(e)}")
