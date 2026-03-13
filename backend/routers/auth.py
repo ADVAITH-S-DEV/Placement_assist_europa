@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from google.oauth2 import id_token
 from google.auth.transport import requests
 import os
+import httpx
 
 from database import get_db
 import models
@@ -26,13 +27,31 @@ def admin_login(admin_credentials: schemas.AdminLogin, db: Session = Depends(get
 
 @router.post("/student/google", response_model=schemas.Token)
 def student_google_auth(auth_data: schemas.GoogleAuthToken, db: Session = Depends(get_db)):
+    # Try verifying as an Access Token first (via userinfo endpoint)
+    # This is what useGoogleLogin from @react-oauth/google usually sends
+    email = None
+    name = None
+
     try:
-        # Verify Google token
-        idinfo = id_token.verify_oauth2_token(auth_data.token, requests.Request(), GOOGLE_CLIENT_ID)
-        email = idinfo['email']
-        name = idinfo.get('name', '')
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid Google Token")
+        response = httpx.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+            headers={"Authorization": f"Bearer {auth_data.token}"}
+        )
+        if response.status_code == 200:
+            user_data = response.json()
+            email = user_data.get('email')
+            name = user_data.get('name', '')
+    except Exception:
+        pass
+
+    # If that fails, try verifying as an ID Token (JWT)
+    if not email:
+        try:
+            idinfo = id_token.verify_oauth2_token(auth_data.token, requests.Request(), GOOGLE_CLIENT_ID)
+            email = idinfo['email']
+            name = idinfo.get('name', '')
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid Google Token")
 
     # Check if student exists
     student = db.query(models.Student).filter(models.Student.email == email).first()
