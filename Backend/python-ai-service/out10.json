@@ -1,0 +1,144 @@
+﻿Status Code: 200
+{
+  "success": true,
+  "data": {
+    "name": "AMARJEET KUMAR",
+    "email": "amarjeetakskumar@gmail.com",
+    "phone": "+91-9153899611",
+    "linkedin": "",
+    "github": "",
+    "location": "",
+    "education": [
+      {
+        "institution": "Cochin University of Science and Technology Kochi",
+        "location": "Kerala, India",
+        "cgpa": "9.28",
+        "degree": "Bachelor of Technology Information Technology"
+      }
+    ],
+    "experience": [
+      {
+        "role": "Angular Developer Intern",
+        "company": "IIT GOA",
+        "location": "GOA",
+        "start_date": "05/2025",
+        "end_date": "06/2025",
+        "responsibilities": []
+      },
+      {
+        "role": "IIT GOA, GOA",
+        "company": "MERN Stack Developer Intern",
+        "location": "",
+        "start_date": "05/2024",
+        "end_date": "06/2024",
+        "responsibilities": []
+      },
+      {
+        "role": "MERN Stack Developer Intern",
+        "company": "Webstack Academy",
+        "location": "Bangalore",
+        "start_date": "",
+        "end_date": "",
+        "responsibilities": []
+      }
+    ],
+    "projects": [
+      {
+        "title": "Rehab Care \u2013 Healthcare Management System",
+        "organization": "IIT Goa Internship Project",
+        "technologies": [
+          "Angular",
+          "Node.js"
+        ],
+        "description": [
+          "Built a secure healthcare platform for patient-therapist interaction using Angular and Node.js.",
+          "Implemented JWT authentication, protected routes, and role-based access control.",
+          "Designed REST APIs and optimized MongoDB queries for efficient medical record handling."
+        ]
+      },
+      {
+        "title": "Food Order App \u2013 Real-Time MERN Application",
+        "organization": "Webstack Academy Internship Project",
+        "technologies": [
+          "MERN"
+        ],
+        "description": [
+          "WebSockets",
+          "Developed a scalable food ordering system with real-time tracking using WebSockets and MongoDB change streams.",
+          "Implemented secure authentication and Stripe payment gateway integration.",
+          "Built responsive UI with optimized performance across devices."
+        ]
+      },
+      {
+        "title": "Psychometric Insights \u2013 AI based Personality Tests",
+        "organization": "Code reCET 2.0",
+        "technologies": [
+          "HuggingFace",
+          "XGBoost",
+          "Flask"
+        ],
+        "description": [
+          "Built an AI-driven platform for SSB aspirants, simulating WAT, SRT, and PPDT tests with instant NLP-based feedback.",
+          "ImplementedHuggingFace Transformers, XGBoost, and Flask REST APIsforresponseanalysisandreal-time evaluation."
+        ]
+      },
+      {
+        "title": "Library Management System",
+        "organization": "LMS",
+        "technologies": [
+          "React",
+          "Node.js",
+          "Express",
+          "MongoDB"
+        ],
+        "description": [
+          "Built a role-based LMS using React, Node.js, Express, and MongoDB.",
+          "Implemented book issue, renewal, reservation system, and renewal history tracking."
+        ]
+      }
+    ],
+    "skills": {
+      "languages": [
+        "C",
+        "C++",
+        "JavaScript",
+        "TypeScript",
+        "Python"
+      ],
+      "frontend": [
+        "React.js",
+        "Angular",
+        "Next.js",
+        "Tailwind CSS"
+      ],
+      "backend": [
+        "Node.js",
+        "Express.js",
+        "Flask"
+      ],
+      "databases": [
+        "MongoDB",
+        "MySQL",
+        "Mongoose"
+      ],
+      "ai_ml": [
+        "HuggingFace Transformers",
+        "XGBoost",
+        "NLP"
+      ],
+      "tools": [
+        "Achievements & Certifications"
+      ]
+    },
+    "achievements": [
+      "Finalist at Morhead \u2013 Cain Global Fellowship, UNC, NC, USA.",
+      "Best use of Technology Award in HACK EUROPA."
+    ],
+    "certifications": [
+      "Infosys Springboard AI/ML Specialist",
+      "CISCO Networking Basics",
+      "University of Helsinki 5ECTS (MERN)",
+      "1"
+    ]
+  }
+}

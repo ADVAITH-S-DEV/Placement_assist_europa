@@ -1,0 +1,45 @@
+﻿--- PAGE 1 ---
+AMARJEET KUMAR
+amarjeetakskumar@gmail.com | LinkedIn | GitHub | +91-9153899611
+Education
+Cochin University of Science and Technology Kochi, Kerala, India
+Bachelor of Technology Information Technology CGPA û 9.28/10
+Experience
+Angular Developer Intern 05/2025 û 06/2025
+IIT GOA, GOA
+MERN Stack Developer Intern 05/2024 û 06/2024
+Webstack Academy, Bangalore
+Projects
+Rehab Care û Healthcare Management System (IIT Goa Internship Project) | Angular, Node.js
+ò Built a secure healthcare platform for patient-therapist interaction using Angular and Node.js.
+ò Implemented JWT authentication, protected routes, and role-based access control.
+ò Designed REST APIs and optimized MongoDB queries for efficient medical record handling.
+Food Order App û Real-Time MERN Application (Webstack Academy Internship Project) | MERN,
+WebSockets
+ò Developed a scalable food ordering system with real-time tracking using WebSockets and MongoDB change
+streams.
+ò Implemented secure authentication and Stripe payment gateway integration.
+ò Built responsive UI with optimized performance across devices.
+Psychometric Insights û AI based Personality Tests (Code reCET 2.0) | HuggingFace, XGBoost, Flask
+ò Built an AI-driven platform for SSB aspirants, simulating WAT, SRT, and PPDT tests with instant NLP-based
+feedback.
+ò ImplementedHuggingFace Transformers, XGBoost, and Flask REST APIsforresponseanalysisandreal-time
+evaluation.
+Library Management System (LMS) | React, Node.js, Express, MongoDB
+ò Built a role-based LMS using React, Node.js, Express, and MongoDB.
+ò Implemented book issue, renewal, reservation system, and renewal history tracking.
+Technical Skills
+ò Languages: C, C++, JavaScript, TypeScript, Python
+ò Frontend Tools: React.js, Angular, Next.js, Tailwind CSS
+ò Backend Tools: Node.js, Express.js, Flask
+ò Databases: MongoDB, MySQL, Mongoose
+ò AI/ML Technologies: HuggingFace Transformers, XGBoost, NLP
+Achievements & Certifications
+Achievements
+ò Finalist at Morhead û Cain Global Fellowship, UNC, NC, USA.
+ò Best use of Technology Award in HACK EUROPA.
+Certifications
+ò Infosys Springboard AI/ML Specialist
+ò CISCO Networking Basics
+ò University of Helsinki 5ECTS (MERN)
+1
