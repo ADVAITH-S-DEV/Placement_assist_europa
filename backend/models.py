@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Text
+
+from sqlalchemy import Column, Integer, String, Text, Float, DateTime, ForeignKey,Boolean
 from database import Base
 
 class Admin(Base):
@@ -23,3 +24,21 @@ class DummyStudentRecord(Base):
     age = Column(Integer)
     dob = Column(String) # For simplicity
     marks = Column(String) # Could be JSON in Postgres, keeping string to support SQLite simply
+class Job(Base):
+    __tablename__ = "jobs"
+    id = Column(Integer, primary_key=True, index=True)
+    company_name = Column(String)
+    job_role = Column(String)
+    description = Column(String)
+    tech_skills = Column(String) # Stored as comma separated
+    location = Column(String)
+    min_cgpa = Column(Float)
+    backlogs = Column(Boolean)
+
+class InterviewRound(Base):
+    __tablename__ = "interview_rounds"
+    id = Column(Integer, primary_key=True, index=True)
+    job_id = Column(Integer, ForeignKey("jobs.id"))
+    round_name = Column(String)
+    start_time = Column(DateTime)
+    end_time = Column(DateTime)

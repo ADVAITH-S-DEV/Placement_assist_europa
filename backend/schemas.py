@@ -29,7 +29,7 @@ class DummyStudentResponse(BaseModel):
     marks: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # Change 'orm_mode = True' to this
 
 class StudentResponse(BaseModel):
     reg_number: str
@@ -37,4 +37,4 @@ class StudentResponse(BaseModel):
     email: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # Change 'orm_mode = True' to this

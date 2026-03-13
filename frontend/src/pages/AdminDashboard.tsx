@@ -1,12 +1,22 @@
 import { useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Users, Search } from 'lucide-react';
+import { LogOut, Users, Search, PlusCircle, Calendar as CalendarIcon, Briefcase, X } from 'lucide-react';
 import api from '../services/api';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [students, setStudents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [newJob, setNewJob] = useState({
+    company_name: '',
+    job_role: '',
+    description: '',
+    tech_skills: '',
+    location: '',
+    min_cgpa: 0,
+  });
 
   useEffect(() => {
     const fetchStudents = async () => {
@@ -29,6 +39,26 @@ const AdminDashboard = () => {
     navigate('/login');
   };
 
+  const handlePostJob = async (e: FormEvent) => {
+    e.preventDefault();
+    try {
+      const jobData = {
+        ...newJob,
+        tech_skills: newJob.tech_skills.split(',').map((s: string) => s.trim()),
+        min_cgpa: Number(newJob.min_cgpa)
+      };
+      // Note: Endpoint updated to match our placements router
+      await api.post('/placements/jobs', jobData);
+      alert('Job posted and eligible students notified!');
+      setIsJobModalOpen(false);
+      // Reset form
+      setNewJob({ company_name: '', job_role: '', description: '', tech_skills: '', location: '', min_cgpa: 0 });
+    } catch (err) {
+      console.error('Error posting job', err);
+      alert('Failed to post job. Check console.');
+    }
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-color)' }}>
       {/* Navbar */}
@@ -46,6 +76,29 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto' }}>
+        
+        {/* QUICK ACTIONS SECTION */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '3rem' }}>
+          <div style={actionCardStyle}>
+            <Briefcase className="w-8 h-8 text-primary" style={{ marginBottom: '1rem' }} />
+            <h3 style={{ margin: '0.5rem 0' }}>Post New Job</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Broadcast opportunities to eligible students.</p>
+            <button onClick={() => setIsJobModalOpen(true)} className="btn btn-primary" style={{ width: '100%' }}>
+              <PlusCircle className="w-4 h-4 mr-2" /> Create Post
+            </button>
+          </div>
+
+          <div style={actionCardStyle}>
+            <CalendarIcon className="w-8 h-8" style={{ marginBottom: '1rem', color: '#8b5cf6' }} />
+            <h3 style={{ margin: '0.5rem 0' }}>Manage Schedule</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Set interview rounds and calendar events.</p>
+            <button onClick={() => navigate('/admin/calendar')} className="btn btn-outline" style={{ width: '100%' }}>
+              View Calendar
+            </button>
+          </div>
+        </div>
+
+        {/* STUDENT TABLE SECTION */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Registered Students</h2>
           <div style={{ position: 'relative' }}>
@@ -55,7 +108,6 @@ const AdminDashboard = () => {
               placeholder="Search by name or reg no..." 
               className="form-input" 
               style={{ paddingLeft: '2.5rem', width: '300px' }}
-              disabled
             />
           </div>
         </div>
@@ -71,14 +123,14 @@ const AdminDashboard = () => {
                 <tr style={{ background: 'var(--bg-color)', borderBottom: '1px solid var(--border-color)', textAlign: 'left' }}>
                   <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Reg Number</th>
                   <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Name</th>
-                  <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Google Account Email</th>
+                  <th style={{ padding: '1rem 1.5rem', fontWeight: 500, color: 'var(--text-muted)' }}>Email</th>
                 </tr>
               </thead>
               <tbody>
                 {students.map((student) => (
                   <tr key={student.reg_number} style={{ borderBottom: '1px solid var(--border-color)' }}>
                     <td style={{ padding: '1rem 1.5rem', fontWeight: 500 }}>{student.reg_number}</td>
-                    <td style={{ padding: '1rem 1.5rem', color: 'var(--text-main)' }}>{student.name}</td>
+                    <td style={{ padding: '1rem 1.5rem' }}>{student.name}</td>
                     <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)' }}>{student.email}</td>
                   </tr>
                 ))}
@@ -87,8 +139,88 @@ const AdminDashboard = () => {
           )}
         </div>
       </main>
+
+      {/* JOB POSTING MODAL */}
+      {isJobModalOpen && (
+        <div style={overlayStyle}>
+          <div style={modalStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h2 style={{ margin: 0 }}>Post New Opportunity</h2>
+              <X className="w-6 h-6 cursor-pointer" onClick={() => setIsJobModalOpen(false)} />
+            </div>
+            <form onSubmit={handlePostJob} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <input 
+                placeholder="Company Name" required style={inputStyle}
+                value={newJob.company_name} onChange={e => setNewJob({...newJob, company_name: e.target.value})} 
+              />
+              <input 
+                placeholder="Job Role" required style={inputStyle}
+                value={newJob.job_role} onChange={e => setNewJob({...newJob, job_role: e.target.value})} 
+              />
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <input 
+                  placeholder="Location" required style={{...inputStyle, flex: 1}}
+                  value={newJob.location} onChange={e => setNewJob({...newJob, location: e.target.value})} 
+                />
+                <input 
+                  type="number" step="0.1" placeholder="Min CGPA" required style={{...inputStyle, width: '120px'}}
+                  value={newJob.min_cgpa} onChange={e => setNewJob({...newJob, min_cgpa: Number(e.target.value)})} 
+                />
+              </div>
+              <input 
+                placeholder="Tech Skills (comma separated: React, Python)" required style={inputStyle}
+                value={newJob.tech_skills} onChange={e => setNewJob({...newJob, tech_skills: e.target.value})} 
+              />
+              <textarea 
+                placeholder="Job Description" rows={4} style={inputStyle}
+                value={newJob.description} onChange={e => setNewJob({...newJob, description: e.target.value})} 
+              />
+              <button type="submit" className="btn btn-primary" style={{ padding: '0.75rem', marginTop: '1rem' }}>
+                Publish & Notify Students
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
+};
+
+// Inline Styles
+const actionCardStyle = {
+  background: 'var(--surface-color)',
+  padding: '1.5rem',
+  borderRadius: 'var(--radius-lg)',
+  border: '1px solid var(--border-color)',
+  display: 'flex',
+  flexDirection: 'column' as const,
+  alignItems: 'center',
+  textAlign: 'center' as const,
+};
+
+const overlayStyle = {
+  position: 'fixed' as const,
+  top: 0, left: 0, width: '100%', height: '100%',
+  background: 'rgba(0,0,0,0.5)',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  zIndex: 1000,
+};
+
+const modalStyle = {
+  background: 'var(--surface-color)',
+  padding: '2rem',
+  borderRadius: 'var(--radius-lg)',
+  width: '90%',
+  maxWidth: '500px',
+  boxShadow: 'var(--shadow-lg)',
+};
+
+const inputStyle = {
+  padding: '0.75rem',
+  borderRadius: 'var(--radius-md)',
+  border: '1px solid var(--border-color)',
+  background: 'var(--bg-color)',
+  fontSize: '0.875rem',
 };
 
 export default AdminDashboard;
