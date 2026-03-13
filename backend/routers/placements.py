@@ -92,27 +92,25 @@ async def get_eligible_applicants(db: Session = Depends(get_db)):
     - is_completed: that interview's end_time is in the past
     """
     result = db.execute(
-       # In backend/routers/placements.py
-
-query = text("""
-    SELECT 
-        s.id AS id, 
-        s.name AS name, 
-        s.reg_number AS reg_number, 
-        s.branch AS branch,
-        j.job_role AS job_role, 
-        j.company_name AS company_name,
-        j.id AS job_id,
-        ir.start_time AS interview_start,
-        ir.end_time AS interview_end,
-        CASE WHEN ir.id IS NOT NULL THEN 1 ELSE 0 END AS is_scheduled
-    FROM dummy_student_records s
-    JOIN applications a ON s.id = a.student_id
-    JOIN jobs j ON a.job_id = j.id
-    LEFT JOIN interview_rounds ir 
-        ON ir.student_id = s.id AND ir.job_id = j.id
-    WHERE CAST(s.cgpa AS DECIMAL) >= j.min_cgpa
-""")
+        text("""
+        SELECT 
+            s.id AS id, 
+            s.name AS name, 
+            s.reg_number AS reg_number, 
+            s.branch AS branch,
+            j.job_role AS job_role, 
+            j.company_name AS company_name,
+            j.id AS job_id,
+            ir.start_time AS interview_start,
+            ir.end_time AS interview_end,
+            CASE WHEN ir.id IS NOT NULL THEN 1 ELSE 0 END AS is_scheduled
+        FROM dummy_student_records s
+        JOIN applications a ON s.id = a.student_id
+        JOIN jobs j ON a.job_id = j.id
+        LEFT JOIN interview_rounds ir 
+            ON ir.student_id = s.id AND ir.job_id = j.id
+        WHERE CAST(s.cgpa AS DECIMAL) >= j.min_cgpa
+        """)
     )
     return [dict(row._mapping) for row in result]
 

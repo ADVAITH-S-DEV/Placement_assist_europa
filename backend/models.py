@@ -17,6 +17,7 @@ class Student(Base):
     
 class DummyStudentRecord(Base):
     __tablename__ = "dummy_student_records"
+    name = Column(String)
     id = Column(Integer, primary_key=True, index=True)
     reg_number = Column(String, unique=True, index=True)
     cgpa = Column(Float)
