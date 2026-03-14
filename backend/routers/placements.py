@@ -61,10 +61,21 @@ async def create_job(job: JobCreate, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/jobs", response_model=List[JobCreate])
+@router.get("/jobs", response_model=List[JobResponse])
 async def get_all_jobs(db: Session = Depends(get_db)):
     jobs = db.query(models.Job).all()
-    return jobs
+    return [
+        {
+            "id": job.id,
+            "company_name": job.company_name,
+            "job_role": job.job_role,
+            "description": job.description,
+            "tech_skills": job.tech_skills.split(",") if job.tech_skills else [],
+            "location": job.location,
+            "min_cgpa": job.min_cgpa,
+        }
+        for job in jobs
+    ]
 
 
 @router.get("/calendar-events")
@@ -185,21 +196,3 @@ async def delete_interview(interview_id: int, db: Session = Depends(get_db)):
     db.delete(interview)
     db.commit()
     return {"message": "Interview deleted"}
-class JobResponse(JobCreate):
-    id: int
-
-@router.get("/jobs", response_model=List[JobResponse])
-async def get_all_jobs(db: Session = Depends(get_db)):
-    jobs = db.query(models.Job).all()
-    return [
-        {
-            "id": job.id,
-            "company_name": job.company_name,
-            "job_role": job.job_role,
-            "description": job.description,
-            "tech_skills": job.tech_skills.split(",") if job.tech_skills else [],
-            "location": job.location,
-            "min_cgpa": job.min_cgpa,
-        }
-        for job in jobs
-    ]
