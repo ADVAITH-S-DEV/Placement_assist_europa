@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List
+from datetime import datetime
 from database import SessionLocal
 import models
 from pydantic import BaseModel
@@ -25,15 +26,20 @@ class JobCreate(BaseModel):
     location: str
     min_cgpa: float
 
+class InterviewSchedule(BaseModel):
+    student_id: int
+    job_id: int
+    start: datetime
+    end: datetime
+
+
 @router.post("/jobs")
 async def create_job(job: JobCreate, db: Session = Depends(get_db)):
-    # 1. Save job to database
-    # Note: Ensure you add a 'Job' model to your models.py
     new_job = models.Job(
         company_name=job.company_name,
         job_role=job.job_role,
         description=job.description,
-        tech_skills=",".join(job.tech_skills), # Storing as comma-separated string
+        tech_skills=",".join(job.tech_skills),
         location=job.location,
         min_cgpa=job.min_cgpa
     )
@@ -41,9 +47,7 @@ async def create_job(job: JobCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_job)
 
-    # 2. Identify eligible students for notification
     eligible_count = db.query(models.DummyStudentRecord).filter(
-        
         models.DummyStudentRecord.cgpa >= job.min_cgpa
     ).count()
 
@@ -53,9 +57,15 @@ async def create_job(job: JobCreate, db: Session = Depends(get_db)):
         "notified_count": eligible_count
     }
 
+
+@router.get("/jobs", response_model=List[JobCreate])
+async def get_all_jobs(db: Session = Depends(get_db)):
+    jobs = db.query(models.Job).all()
+    return jobs
+
+
 @router.get("/calendar-events")
 async def get_calendar_events(db: Session = Depends(get_db)):
-    # Fetch interview rounds, join with student + job so the calendar can show who + what
     rows = (
         db.query(models.InterviewRound, models.DummyStudentRecord, models.Job)
         .join(models.DummyStudentRecord, models.InterviewRound.student_id == models.DummyStudentRecord.id)
@@ -65,32 +75,19 @@ async def get_calendar_events(db: Session = Depends(get_db)):
 
     events = []
     for r, student, job in rows:
-        # DummyStudentRecord does not have a 'name' field; use reg_number to identify the student.
-        title = f"{student.reg_number} - {job.job_role} at {job.company_name}"
-        events.append(
-            {
-                "id": r.id,
-                "title": title,
-                "start": r.start_time.isoformat() if r.start_time else None,
-                "end": r.end_time.isoformat() if r.end_time else None,
-                "completed": bool(r.end_time and r.end_time < datetime.utcnow()),
-            }
-        )
+        title = f"{student.name} - {job.job_role} at {job.company_name}"
+        events.append({
+            "id": r.id,
+            "title": title,
+            "start": r.start_time.isoformat() if r.start_time else None,
+            "end": r.end_time.isoformat() if r.end_time else None,
+            "completed": bool(r.end_time and r.end_time < datetime.utcnow()),
+        })
     return events
-@router.get("/jobs", response_model=List[JobCreate])
-async def get_all_jobs(db: Session = Depends(get_db)):
-    # Fetch all jobs from the database
-    jobs = db.query(models.Job).all()
-    return jobs
-from datetime import datetime
+
 
 @router.get("/eligible-applicants")
 async def get_eligible_applicants(db: Session = Depends(get_db)):
-    """
-    Return eligible applicants with interview status:
-    - is_scheduled: there is at least one interview_round for this student+job
-    - is_completed: that interview's end_time is in the past
-    """
     result = db.execute(
         text("""
         SELECT 
@@ -117,36 +114,23 @@ async def get_eligible_applicants(db: Session = Depends(get_db)):
 
 @router.get("/applicants")
 async def get_all_applicants(db: Session = Depends(get_db)):
-    """
-    Return all applicants (dummy student records) with academic details
-    and placed status.
-    """
     result = db.execute(
-        text(
-            """
-            SELECT
-                s.id AS id,
-                s.reg_number AS reg_number,
-                s.name AS name,
-                s.branch AS branch,
-                s.graduation_year AS graduation_year,
-                s.placed AS placed
-            FROM dummy_student_records s
-            """
-        )
+        text("""
+        SELECT
+            s.id AS id,
+            s.reg_number AS reg_number,
+            s.name AS name,
+            s.branch AS branch,
+            s.graduation_year AS graduation_year,
+            s.placed AS placed
+        FROM dummy_student_records s
+        """)
     )
     return [dict(row._mapping) for row in result]
-
-class InterviewSchedule(BaseModel):
-    student_id: int
-    job_id: int
-    start: datetime
-    end: datetime
 
 
 @router.post("/schedule-interview")
 async def schedule_interview(payload: InterviewSchedule, db: Session = Depends(get_db)):
-    # Extra safety: verify student is still eligible for this job by CGPA
     student = db.query(models.DummyStudentRecord).filter(models.DummyStudentRecord.id == payload.student_id).first()
     job = db.query(models.Job).filter(models.Job.id == payload.job_id).first()
 
@@ -156,7 +140,6 @@ async def schedule_interview(payload: InterviewSchedule, db: Session = Depends(g
     if student.cgpa < job.min_cgpa:
         raise HTTPException(status_code=400, detail="Student not eligible for this job based on CGPA")
 
-    # Conflict Check: Is there any interview overlapping this time?
     conflict = db.query(models.InterviewRound).filter(
         models.InterviewRound.start_time < payload.end,
         models.InterviewRound.end_time > payload.start
@@ -179,7 +162,6 @@ async def schedule_interview(payload: InterviewSchedule, db: Session = Depends(g
 
 @router.delete("/interviews/{interview_id}")
 async def delete_interview(interview_id: int, db: Session = Depends(get_db)):
-    """Cancel/remove a scheduled interview round."""
     interview = db.query(models.InterviewRound).filter(models.InterviewRound.id == interview_id).first()
     if not interview:
         raise HTTPException(status_code=404, detail="Interview not found")
