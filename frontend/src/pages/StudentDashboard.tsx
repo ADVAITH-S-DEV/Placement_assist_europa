@@ -27,7 +27,7 @@ interface Job {
   company_name: string;
   job_role: string;
   description: string;
-  tech_skills: string;
+  tech_skills: string[];
   location: string;
   min_cgpa: number;
   backlogs?: boolean;
@@ -303,9 +303,15 @@ const StudentDashboard = () => {
                     </div>
 
                     <div className="sd-skills">
-                      {job.tech_skills.split(',').map((s) => (
-                        <span key={s} className="sd-skill-tag">{s.trim()}</span>
-                      ))}
+                      {Array.isArray(job.tech_skills) ? (
+                        job.tech_skills.map((s) => (
+                          <span key={s} className="sd-skill-tag">{s.trim()}</span>
+                        ))
+                      ) : (
+                        typeof job.tech_skills === 'string' && (job.tech_skills as string).split(',').map((s) => (
+                          <span key={s} className="sd-skill-tag">{s.trim()}</span>
+                        ))
+                      )}
                     </div>
 
                     {!eligible && (
