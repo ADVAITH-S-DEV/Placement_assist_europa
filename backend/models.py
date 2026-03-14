@@ -1,6 +1,7 @@
 
 from sqlalchemy import Column, Integer, String, Text, Float, DateTime, ForeignKey,Boolean
 from database import Base
+from datetime import datetime
 
 class Admin(Base):
     __tablename__ = "admins"
@@ -30,6 +31,7 @@ class DummyStudentRecord(Base):
     graduation_year = Column(Integer)
     active_backlogs = Column(Boolean, default=False)
     placed = Column(Boolean, default=False)
+
 class Job(Base):
     __tablename__ = "jobs"
     id = Column(Integer, primary_key=True, index=True)
@@ -40,6 +42,17 @@ class Job(Base):
     location = Column(String)
     min_cgpa = Column(Float)
     backlogs = Column(Boolean)
+
+class Application(Base):
+    __tablename__ = "applications"
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("dummy_student_records.id"))
+    job_id = Column(Integer, ForeignKey("jobs.id"))
+    applied_at = Column(DateTime, default=datetime.utcnow)
+    status = Column(String, default="applied")  # applied, shortlisted, rejected, selected
+    resume_data = Column(Text, nullable=True)  # Base64 encoded resume file
+    resume_filename = Column(String, nullable=True)  # Original filename
+    cover_letter = Column(Text, nullable=True)  # Cover letter text
 
 class InterviewRound(Base):
     __tablename__ = "interview_rounds"

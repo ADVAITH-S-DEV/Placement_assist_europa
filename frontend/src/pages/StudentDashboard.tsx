@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   LogOut, GraduationCap, MapPin, Calendar, Award, User,
   Briefcase, CheckCircle, XCircle, BookOpen, Building2,
-  TrendingUp, Clock, AlertCircle, Loader2
+  TrendingUp, Clock, AlertCircle, Loader2, Send, X, Upload
 } from 'lucide-react';
 import api from '../services/api';
 import './StudentDashboard.css';
 
 interface StudentProfile {
+  id?: number;
   reg_number: string;
   name?: string;
   cgpa?: number;
@@ -33,13 +34,35 @@ interface Job {
   backlogs?: boolean;
 }
 
+interface ApplicationStatus {
+  [jobId: number]: {
+    applied: boolean;
+    status: string;
+    id: number;
+  };
+}
+
+interface ApplicationForm {
+  resume: File | null;
+  coverLetter: string;
+}
+
 const StudentDashboard = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showApplicationModal, setShowApplicationModal] = useState(false);
+  const [selectedJobForApplication, setSelectedJobForApplication] = useState<Job | null>(null);
+  const [applicationForm, setApplicationForm] = useState<ApplicationForm>({
+    resume: null,
+    coverLetter: ''
+  });
+  const [submittingApplication, setSubmittingApplication] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'eligible'>('all');
+  const [applications, setApplications] = useState<ApplicationStatus>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -50,6 +73,24 @@ const StudentDashboard = () => {
         ]);
         setProfile(profileRes.data);
         setJobs(jobsRes.data);
+
+        // Fetch applications for this student
+        if (profileRes.data.id) {
+          try {
+            const appsRes = await api.get(`/placements/student/${profileRes.data.id}/applications`);
+            const appsMap: ApplicationStatus = {};
+            appsRes.data.forEach((app: any) => {
+              appsMap[app.job_id] = {
+                applied: true,
+                status: app.status,
+                id: app.id
+              };
+            });
+            setApplications(appsMap);
+          } catch (err) {
+            console.error('Error fetching applications:', err);
+          }
+        }
       } catch (err: any) {
         console.error('Data fetch error', err);
         if (err?.response?.status === 401) {
@@ -70,6 +111,87 @@ const StudentDashboard = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('role');
     navigate('/login');
+  };
+
+  const handleApply = (job: Job) => {
+    if (!profile?.id) {
+      alert('Student profile not found');
+      return;
+    }
+    setSelectedJobForApplication(job);
+    setApplicationForm({ resume: null, coverLetter: '' });
+    setShowApplicationModal(true);
+  };
+
+  const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setApplicationForm((prev) => ({
+        ...prev,
+        resume: e.target.files![0]
+      }));
+    }
+  };
+
+  const handleCoverLetterChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setApplicationForm((prev) => ({
+      ...prev,
+      coverLetter: e.target.value
+    }));
+  };
+
+  const handleSubmitApplication = async () => {
+    if (!selectedJobForApplication || !profile?.id) {
+      alert('Invalid application data');
+      return;
+    }
+
+    setSubmittingApplication(true);
+
+    try {
+      let resumeData = '';
+      let resumeFilename = '';
+
+      // Convert file to base64 if provided
+      if (applicationForm.resume) {
+        resumeFilename = applicationForm.resume.name;
+        const reader = new FileReader();
+        resumeData = await new Promise((resolve, reject) => {
+          reader.onload = () => {
+            const base64 = reader.result as string;
+            resolve(base64.split(',')[1]); // Get base64 without data:application/...
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(applicationForm.resume!);
+        }) as string;
+      }
+
+      const response = await api.post('/placements/apply', {
+        student_id: profile.id,
+        job_id: selectedJobForApplication.id,
+        resume_data: resumeData,
+        resume_filename: resumeFilename,
+        cover_letter: applicationForm.coverLetter
+      });
+
+      // Update applications state
+      setApplications((prev) => ({
+        ...prev,
+        [selectedJobForApplication.id]: {
+          applied: true,
+          status: response.data.status,
+          id: response.data.id
+        }
+      }));
+
+      // Close modal and show success
+      setShowApplicationModal(false);
+      alert('Application submitted successfully!');
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.detail || 'Failed to submit application';
+      alert(errorMessage);
+    } finally {
+      setSubmittingApplication(false);
+    }
   };
 
   const isEligible = (job: Job) => {
@@ -321,12 +443,117 @@ const StudentDashboard = () => {
                           : 'Backlogs not allowed for this role'}
                       </p>
                     )}
+
+                    {/* Apply Button Section */}
+                    <div className="sd-job-action">
+                      {applications[job.id]?.applied ? (
+                        <div className="sd-applied-badge">
+                          <CheckCircle size={16} className="sd-applied-icon" />
+                          <span>Applied - {applications[job.id]?.status}</span>
+                        </div>
+                      ) : eligible ? (
+                        <button
+                          className="sd-apply-btn"
+                          onClick={() => handleApply(job)}
+                        >
+                          <Send size={16} />
+                          Apply Now
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </section>
+
+        {/* APPLICATION MODAL */}
+        {showApplicationModal && selectedJobForApplication && (
+          <div className="sd-modal-overlay" onClick={() => setShowApplicationModal(false)}>
+            <div className="sd-modal-content" onClick={(e) => e.stopPropagation()}>
+              <div className="sd-modal-header">
+                <div>
+                  <h2 className="sd-modal-title">Apply for {selectedJobForApplication.job_role}</h2>
+                  <p className="sd-modal-subtitle">at {selectedJobForApplication.company_name}</p>
+                </div>
+                <button
+                  className="sd-modal-close"
+                  onClick={() => setShowApplicationModal(false)}
+                  type="button"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="sd-modal-body">
+                {/* Resume Upload */}
+                <div className="sd-form-group">
+                  <label className="sd-form-label">📄 Upload Resume <span style={{ color: '#ef4444' }}>*</span></label>
+                  <div
+                    className="sd-file-input-wrapper"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload size={32} color="#4f46e5" />
+                    <p className="sd-file-input-text">
+                      {applicationForm.resume
+                        ? applicationForm.resume.name
+                        : 'Click to upload or drag and drop'}
+                    </p>
+                    <p className="sd-file-input-hint">PDF, DOC, DOCX (max 5MB)</p>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={handleResumeChange}
+                      className="sd-file-input-hidden"
+                    />
+                  </div>
+                </div>
+
+                {/* Cover Letter */}
+                <div className="sd-form-group">
+                  <label className="sd-form-label">✍️ Cover Letter</label>
+                  <textarea
+                    className="sd-textarea"
+                    placeholder="Tell us why you're a great fit for this role... (Optional)"
+                    value={applicationForm.coverLetter}
+                    onChange={handleCoverLetterChange}
+                    rows={6}
+                  />
+                  <p className="sd-hint-text">{applicationForm.coverLetter.length} characters</p>
+                </div>
+              </div>
+
+              <div className="sd-modal-footer">
+                <button
+                  className="sd-btn-secondary"
+                  onClick={() => setShowApplicationModal(false)}
+                  disabled={submittingApplication}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="sd-btn-primary-modal"
+                  onClick={handleSubmitApplication}
+                  disabled={submittingApplication || !applicationForm.resume}
+                >
+                  {submittingApplication ? (
+                    <>
+                      <Loader2 size={16} className="sd-spinner-inline" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send size={16} />
+                      Submit Application
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
