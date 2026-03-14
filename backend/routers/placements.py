@@ -26,6 +26,9 @@ class JobCreate(BaseModel):
     location: str
     min_cgpa: float
 
+class JobResponse(JobCreate):
+    id: int
+
 class InterviewSchedule(BaseModel):
     student_id: int
     job_id: int
@@ -58,10 +61,21 @@ async def create_job(job: JobCreate, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/jobs", response_model=List[JobCreate])
+@router.get("/jobs", response_model=List[JobResponse])
 async def get_all_jobs(db: Session = Depends(get_db)):
     jobs = db.query(models.Job).all()
-    return jobs
+    return [
+        {
+            "id": job.id,
+            "company_name": job.company_name,
+            "job_role": job.job_role,
+            "description": job.description,
+            "tech_skills": job.tech_skills.split(",") if job.tech_skills else [],
+            "location": job.location,
+            "min_cgpa": job.min_cgpa,
+        }
+        for job in jobs
+    ]
 
 
 @router.get("/calendar-events")
@@ -109,7 +123,20 @@ async def get_eligible_applicants(db: Session = Depends(get_db)):
         WHERE CAST(s.cgpa AS DECIMAL) >= j.min_cgpa
         """)
     )
-    return [dict(row._mapping) for row in result]
+    current_utc = datetime.utcnow()
+    applicants = []
+    for row in result:
+        row_dict = dict(row._mapping)
+        # Determine is_completed: true if end_time exists and is passed
+        is_completed = False
+        if row_dict.get('interview_end'):
+            if row_dict['interview_end'] < current_utc:
+                is_completed = True
+        
+        row_dict['is_completed'] = is_completed
+        applicants.append(row_dict)
+        
+    return applicants
 
 
 @router.get("/applicants")
@@ -169,3 +196,21 @@ async def delete_interview(interview_id: int, db: Session = Depends(get_db)):
     db.delete(interview)
     db.commit()
     return {"message": "Interview deleted"}
+class JobResponse(JobCreate):
+    id: int
+
+@router.get("/jobs", response_model=List[JobResponse])
+async def get_all_jobs(db: Session = Depends(get_db)):
+    jobs = db.query(models.Job).all()
+    return [
+        {
+            "id": job.id,
+            "company_name": job.company_name,
+            "job_role": job.job_role,
+            "description": job.description,
+            "tech_skills": job.tech_skills.split(",") if job.tech_skills else [],
+            "location": job.location,
+            "min_cgpa": job.min_cgpa,
+        }
+        for job in jobs
+    ]
