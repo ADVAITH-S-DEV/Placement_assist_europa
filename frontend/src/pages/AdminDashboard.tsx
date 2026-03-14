@@ -10,6 +10,7 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [viewAll, setViewAll] = useState(false); // false = eligible only, true = all applicants
   const [isJobModalOpen, setIsJobModalOpen] = useState(false);
+  const [updatingPlacementId, setUpdatingPlacementId] = useState<number | null>(null);
   const [newJob, setNewJob] = useState({
     company_name: '',
     job_role: '',
@@ -61,6 +62,25 @@ const AdminDashboard = () => {
     } catch (err) {
       console.error('Error posting job', err);
       alert('Failed to post job. Check console.');
+    }
+  };
+
+  const handleUpdatePlacementStatus = async (studentId: number, placed: boolean) => {
+    try {
+      setUpdatingPlacementId(studentId);
+      await api.put(`/placements/students/${studentId}/placement-status?placed=${placed}`);
+      
+      // Update the local state
+      setApplicants(applicants.map(app =>
+        app.id === studentId ? { ...app, placed } : app
+      ));
+      
+      alert(`Student marked as ${placed ? 'placed' : 'not placed'}`);
+    } catch (err) {
+      console.error('Error updating placement status:', err);
+      alert('Failed to update placement status');
+    } finally {
+      setUpdatingPlacementId(null);
     }
   };
 
@@ -169,7 +189,25 @@ const AdminDashboard = () => {
                     <td style={{ padding: '1rem 1.5rem' }}>{app.name}</td>
                     <td style={{ padding: '1rem 1.5rem' }}>{app.branch || '—'}</td>
                     <td style={{ padding: '1rem 1.5rem' }}>{app.graduation_year || '—'}</td>
-                    <td style={{ padding: '1rem 1.5rem' }}>{app.placed ? 'Placed' : 'Not placed'}</td>
+                    <td style={{ padding: '1rem 1.5rem' }}>
+                      <select
+                        value={app.placed ? 'placed' : 'not-placed'}
+                        onChange={(e) => handleUpdatePlacementStatus(app.id, e.target.value === 'placed')}
+                        disabled={updatingPlacementId === app.id}
+                        style={{
+                          padding: '0.5rem',
+                          borderRadius: '0.375rem',
+                          border: '1px solid var(--border-color)',
+                          backgroundColor: 'var(--surface-color)',
+                          color: 'var(--text-color)',
+                          cursor: updatingPlacementId === app.id ? 'not-allowed' : 'pointer',
+                          opacity: updatingPlacementId === app.id ? 0.6 : 1
+                        }}
+                      >
+                        <option value="not-placed">Not placed</option>
+                        <option value="placed">Placed</option>
+                      </select>
+                    </td>
                     {!viewAll && (
                       <>
                         <td style={{ padding: '1rem 1.5rem' }}>
