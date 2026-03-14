@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List
 
 class AdminLogin(BaseModel):
     email: EmailStr
@@ -7,29 +7,34 @@ class AdminLogin(BaseModel):
 
 class StudentRegister(BaseModel):
     email: EmailStr
-    name: str # The name shouldn't really be sent from Google payload since we just receive the token, but we'll accept it for now
+    name: str
     reg_number: str
 
 # Google Auth uses a token ID from frontend
 class GoogleAuthToken(BaseModel):
     token: str
-    reg_number: Optional[str] = None # Will provide if registering
+    reg_number: Optional[str] = None  # Will provide if registering
 
 class Token(BaseModel):
     access_token: str
     token_type: str
-    role: str # 'admin' or 'student'
+    role: str  # 'admin' or 'student'
 
 class DummyStudentResponse(BaseModel):
     reg_number: str
-    cgpa: float
-    address: str
-    age: int
-    dob: str
-    marks: str
+    name: Optional[str] = None
+    cgpa: Optional[float] = None
+    address: Optional[str] = None
+    age: Optional[int] = None
+    dob: Optional[str] = None
+    marks: Optional[str] = None
+    branch: Optional[str] = None
+    graduation_year: Optional[int] = None
+    active_backlogs: Optional[bool] = False
+    placed: Optional[bool] = False
 
     class Config:
-        from_attributes = True  # Change 'orm_mode = True' to this
+        from_attributes = True
 
 class StudentResponse(BaseModel):
     reg_number: str
@@ -37,4 +42,17 @@ class StudentResponse(BaseModel):
     email: str
 
     class Config:
-        from_attributes = True  # Change 'orm_mode = True' to this
+        from_attributes = True
+
+class JobResponse(BaseModel):
+    id: int
+    company_name: str
+    job_role: str
+    description: str
+    tech_skills: str
+    location: str
+    min_cgpa: float
+    backlogs: Optional[bool] = False
+
+    class Config:
+        from_attributes = True

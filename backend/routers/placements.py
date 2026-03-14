@@ -58,10 +58,22 @@ async def create_job(job: JobCreate, db: Session = Depends(get_db)):
     }
 
 
-@router.get("/jobs", response_model=List[JobCreate])
+@router.get("/jobs")
 async def get_all_jobs(db: Session = Depends(get_db)):
     jobs = db.query(models.Job).all()
-    return jobs
+    return [
+        {
+            "id": j.id,
+            "company_name": j.company_name,
+            "job_role": j.job_role,
+            "description": j.description,
+            "tech_skills": j.tech_skills,
+            "location": j.location,
+            "min_cgpa": j.min_cgpa,
+            "backlogs": j.backlogs,
+        }
+        for j in jobs
+    ]
 
 
 @router.get("/calendar-events")
