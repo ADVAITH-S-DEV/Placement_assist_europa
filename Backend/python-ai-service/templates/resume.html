@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!-- ═══ HEADER ═══ -->
+<div class="header">
+    <h1>{{ data.name | upper }}</h1>
+    <p class="contact-line">
+        {% if data.email %}{{ data.email }}{% endif %}
+        {% if data.linkedin %}&nbsp; | &nbsp;LinkedIn{% endif %}
+        {% if data.github %}&nbsp; | &nbsp;GitHub{% endif %}
+        {% if data.phone %}&nbsp; | &nbsp;{{ data.phone }}{% endif %}
+    </p>
+</div>
+
+<!-- ═══ SUMMARY ═══ -->
+{% if data.summary %}
+<div class="section-title">Summary</div>
+<div class="hr"></div>
+<p style="margin: 2pt 0 4pt 0; text-align: justify; font-size: 10pt;">{{ data.summary }}</p>
+{% endif %}
+
+<!-- ═══ EDUCATION ═══ -->
+{% if data.education %}
+<div class="section-title">Education</div>
+<div class="hr"></div>
+{% for edu in data.education %}
+<table class="entry-table">
+    <tr>
+        <td class="text-left bold">{{ edu.institution }}</td>
+        <td class="text-right bold">{{ edu.location or '' }}</td>
+    </tr>
+    <tr>
+        <td class="text-left italic">{{ edu.degree }}</td>
+        <td class="text-right italic">{% if edu.cgpa or edu.gpa %}CGPA — {{ edu.cgpa or edu.gpa }}{% endif %}{% if edu.start_date %} ({{ edu.start_date }} — {{ edu.end_date }}){% endif %}</td>
+    </tr>
+</table>
+{% endfor %}
+{% endif %}
+
+<!-- ═══ EXPERIENCE ═══ -->
+{% if data.experience %}
+<div class="section-title">Experience</div>
+<div class="hr"></div>
+{% for exp in data.experience %}
+<table class="entry-table">
+    <tr>
+        <td class="text-left bold">{{ exp.role }}</td>
+        <td class="text-right bold">{{ exp.start_date or '' }}{% if exp.end_date %} — {{ exp.end_date }}{% endif %}</td>
+    </tr>
+    <tr>
+        <td class="text-left italic">{{ exp.company }}{% if exp.location %}, {{ exp.location }}{% endif %}</td>
+        <td class="text-right"></td>
+    </tr>
+</table>
+{% if exp.responsibilities %}
+<ul>
+    {% for r in exp.responsibilities %}
+    <li>{{ r.text if r is mapping else r }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+<!-- ═══ PROJECTS ═══ -->
+{% if data.projects %}
+<div class="section-title">Projects</div>
+<div class="hr"></div>
+{% for proj in data.projects %}
+<div class="tech-stack">
+    <span class="bold">{{ proj.title or proj.name }}</span>
+    {% if proj.technologies %}
+    | <span class="italic">{{ proj.technologies | join(', ') if proj.technologies is iterable and proj.technologies is not string else proj.technologies }}</span>
+    {% endif %}
+</div>
+{% if proj.description %}
+<ul>
+    {% if proj.description is string and (proj.description.count('.') > 1 or proj.description.count('\n') > 0) %}
+        {% for line in proj.description.split('.') if line.strip() %}
+        <li>{{ line.strip() }}.</li>
+        {% endfor %}
+    {% else %}
+        <li>{{ proj.description }}</li>
+    {% endif %}
+</ul>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+<!-- ═══ TECHNICAL SKILLS ═══ -->
+{% if data.skills %}
+<div class="section-title">Technical Skills</div>
+<div class="hr"></div>
+<ul class="skills-list">
+    {% if data.skills is mapping %}
+        {% for category, items in data.skills.items() %}
+        {% if items %}
+        <li><span class="bold">{{ category | replace('_', ' ') | capitalize }}:</span> {{ items | join(', ') if items is iterable and items is not string else items }}</li>
+        {% endif %}
+        {% endfor %}
+    {% else %}
+        <li>{{ data.skills | join(', ') if data.skills is iterable else data.skills }}</li>
+    {% endif %}
+</ul>
+{% endif %}
+
+<!-- ═══ ACHIEVEMENTS & CERTIFICATIONS ═══ -->
+{% if data.achievements or data.certifications %}
+<div class="section-title">Achievements & Certifications</div>
+<div class="hr"></div>
+
+{% if data.achievements %}
+<div class="sub-label">Achievements</div>
+<ul>
+    {% for ach in data.achievements %}
+    <li>{{ ach.text if ach is mapping else ach }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if data.certifications %}
+<div class="sub-label">Certifications</div>
+<ul>
+    {% for cert in data.certifications %}
+    <li>{{ cert.name if cert is mapping else cert }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+{% endif %}
+
+</body>
+</html>

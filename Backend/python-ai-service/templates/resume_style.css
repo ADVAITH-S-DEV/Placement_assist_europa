@@ -1,0 +1,101 @@
+/* ── LaTeX-Grade Resume Stylesheet (Mimics article class) ── */
+
+@page {
+    size: A4;
+    margin: 0.5in;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Times New Roman', serif;
+    color: #000000;
+    font-size: 10.5pt;
+    line-height: 1.1;
+}
+
+/* ── Header ── */
+.header {
+    text-align: center;
+    margin-bottom: 4pt;
+}
+
+.header h1 {
+    font-size: 18pt;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.contact-line {
+    font-size: 9.5pt;
+}
+
+/* ── Section Dividers ── */
+.section-title {
+    font-size: 11pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin-top: 6pt;
+}
+
+.hr {
+    border-bottom: 0.75pt solid #000;
+    margin-bottom: 3pt;
+    height: 0;
+}
+
+/* ── Entry Layout (Left-Right) ── */
+.entry-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.entry-table td {
+    padding: 0;
+    vertical-align: bottom;
+}
+
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.bold { font-weight: bold; }
+.italic { font-style: italic; }
+
+/* ── Lists ── */
+ul {
+    margin-left: 12pt;
+    margin-top: 1pt;
+    margin-bottom: 2pt;
+}
+
+li {
+    font-size: 10pt;
+    margin-bottom: 1pt;
+    text-align: justify;
+}
+
+/* ── Technical Skills ── */
+.skills-list {
+    list-style-type: none;
+    margin-left: 0;
+}
+
+.skills-list li {
+    margin-bottom: 1pt;
+}
+
+.tech-stack {
+    font-size: 10pt;
+    margin-top: 4pt;
+}
+
+/* achievements fix */
+.sub-label {
+    font-weight: bold;
+    font-size: 10.5pt;
+    margin-top: 4pt;
+}

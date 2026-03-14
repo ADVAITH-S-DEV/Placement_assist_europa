@@ -1,0 +1,28 @@
+{
+  "success": true,
+  "data": {
+    "job_description": "Position: Frontend Engineer Intern. Department: Engineering. Key Responsibilities: Work in an agile environment completing User Stories, Collaborate on implementations with .NET team members, Work with QA and Application Support teams to triage bugs, Work with DevOps to automate the build, deployment and distribution of SPAs and static assets, Consume Restful APIs, JSON payloads, and various payload contexts, Build new Portals/Applications with React, Write Unit tests and documentation. Required Skills and Qualifications: 0-1 years professional experience, Prior experience working with organized development teams, Experience with React & ES6 or HTML/CSS/JS, Experience with JavaScript ES6+, Typescript, SCSS, Understanding of branching, merging, pull requests and conflict resolution in Git, Experience in Unit testing. Preferred Skills: None",
+    "structured_data": {
+      "position": "Frontend Engineer Intern",
+      "department": "Engineering",
+      "responsibilities": [
+        "Work in an agile environment completing User Stories",
+        "Collaborate on implementations with .NET team members",
+        "Work with QA and Application Support teams to triage bugs",
+        "Work with DevOps to automate the build, deployment and distribution of SPAs and static assets",
+        "Consume Restful APIs, JSON payloads, and various payload contexts",
+        "Build new Portals/Applications with React",
+        "Write Unit tests and documentation"
+      ],
+      "required_skills": [
+        "0-1 years professional experience",
+        "Prior experience working with organized development teams",
+        "Experience with React & ES6 or HTML/CSS/JS",
+        "Experience with JavaScript ES6+, Typescript, SCSS",
+        "Understanding of branching, merging, pull requests and conflict resolution in Git",
+        "Experience in Unit testing"
+      ],
+      "preferred_skills": []
+    }
+  }
+}
