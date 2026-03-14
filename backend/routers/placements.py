@@ -509,6 +509,40 @@ async def update_application_status(
         raise HTTPException(status_code=500, detail="Error updating application status")
 
 
+@router.put("/students/{student_id}/placement-status")
+async def update_placement_status(
+    student_id: int,
+    placed: bool,
+    db: Session = Depends(get_db)
+):
+    """Update the placement status of a student (admin only)"""
+    try:
+        student = db.query(models.DummyStudentRecord).filter(
+            models.DummyStudentRecord.id == student_id
+        ).first()
+        
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+        
+        # Update the placement status
+        student.placed = placed
+        db.commit()
+        db.refresh(student)
+        
+        return {
+            "id": student.id,
+            "name": student.name,
+            "placed": student.placed,
+            "message": f"Student marked as {'placed' if placed else 'not placed'}"
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating placement status: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Error updating placement status")
+
+
 @router.delete("/interviews/{interview_id}")
 async def delete_interview(interview_id: int, db: Session = Depends(get_db)):
     interview = db.query(models.InterviewRound).filter(models.InterviewRound.id == interview_id).first()
