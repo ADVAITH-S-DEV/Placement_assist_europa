@@ -4,8 +4,7 @@ import models
 from database import engine, SessionLocal
 from routers import auth, users, placements
 from utils import get_password_hash
-
-models.Base.metadata.create_all(bind=engine)
+from migrate_db import migrate_database
 
 app = FastAPI(title="Placement Assistance API")
 
@@ -27,6 +26,14 @@ app.include_router(placements.router)
 
 @app.on_event("startup")
 def startup_event():
+    try:
+        # Create all database tables
+        models.Base.metadata.create_all(bind=engine)
+        # Run database migration to handle schema updates
+        migrate_database()
+    except Exception as e:
+        print(f"Warning: Could not initialize database schema: {e}")
+    
     db = SessionLocal()
     try:
         # Create default admin if not exists

@@ -5,6 +5,7 @@ import Login from './pages/Login'; // force IDE TS server refresh
 import AdminDashboard from './pages/AdminDashboard';
 import StudentDashboard from './pages/StudentDashboard';
 import AdminCalendar from './pages/AdminCalendar';
+import AdminApplications from './pages/AdminApplications';
 
 const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
@@ -39,6 +40,11 @@ function App() {
           <Route path="/admin/calendar" element={
             <ProtectedRoute allowedRole="admin">
               <AdminCalendar />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/applications" element={
+            <ProtectedRoute allowedRole="admin">
+              <AdminApplications />
             </ProtectedRoute>
           } />
         </Routes>

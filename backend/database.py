@@ -8,24 +8,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Get the URL from .env
-raw_url = os.getenv("DATABASE_URL")
+# Get the URL from .env, with fallback to SQLite for development
+raw_url = os.getenv("DATABASE_URL", "sqlite:///./placement.db")
 
-if not raw_url:
-    raise ValueError("DATABASE_URL not found in .env file")
-
-# 1. Safely parse the URL (This handles the @ in your password correctly)
-url_object = make_url(raw_url)
-
-# 2. Configure the Engine
-if url_object.drivername.startswith("sqlite"):
+if raw_url.startswith("sqlite"):
+    # SQLite for local development
     engine = create_engine(raw_url, connect_args={"check_same_thread": False})
 else:
-    # Use NullPool for Supabase and explicitly set the driver
-    engine = create_engine(
-        url_object.set(drivername="postgresql+psycopg2"), 
-        poolclass=NullPool
-    )
+    # PostgreSQL/Supabase for production
+    try:
+        url_object = make_url(raw_url)
+        engine = create_engine(
+            url_object.set(drivername="postgresql+psycopg2"), 
+            poolclass=NullPool,
+            connect_args={"connect_timeout": 5}
+        )
+    except Exception as e:
+        print(f"Warning: Failed to connect to PostgreSQL at {raw_url}")
+        print(f"Error: {e}")
+        print("Falling back to SQLite for local development...")
+        engine = create_engine("sqlite:///./placement.db", connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

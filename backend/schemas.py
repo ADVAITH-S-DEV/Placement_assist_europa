@@ -21,6 +21,7 @@ class Token(BaseModel):
     role: str  # 'admin' or 'student'
 
 class DummyStudentResponse(BaseModel):
+    id: Optional[int] = None
     reg_number: str
     name: Optional[str] = None
     cgpa: Optional[float] = None

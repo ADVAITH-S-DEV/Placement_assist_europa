@@ -94,6 +94,15 @@ const AdminDashboard = () => {
           </div>
 
           <div style={actionCardStyle}>
+            <Users className="w-8 h-8" style={{ marginBottom: '1rem', color: '#06b6d4' }} />
+            <h3 style={{ margin: '0.5rem 0' }}>View Applications</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Review and manage student applications and resumes.</p>
+            <button onClick={() => navigate('/admin/applications')} className="btn btn-outline" style={{ width: '100%' }}>
+              Check Applications
+            </button>
+          </div>
+
+          <div style={actionCardStyle}>
             <CalendarIcon className="w-8 h-8" style={{ marginBottom: '1rem', color: '#8b5cf6' }} />
             <h3 style={{ margin: '0.5rem 0' }}>Manage Schedule</h3>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>Set interview rounds and calendar events.</p>
